@@ -324,6 +324,7 @@ bool MetaBalancer::AddLoad(int it_n, double load) {
   return true;
 }
 
+//NOTE: Data Collection
 void MetaBalancer::ContributeStats(int it_n) {
 #if CMK_LBDB_ON
   int index = it_n % VEC_SIZE;
