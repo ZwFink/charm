@@ -533,6 +533,8 @@ void MetaBalancer::ReceiveMinStats(double *load, int n) {
                                     avg_hops,
                                     avg_hop_Kbytes,
                                     comm_comp_ratio};
+
+      //Note:Predict LB
       // Model returns value [1,num_lbs]
       int predicted_lb = rFmodel->forestTest(test_data, 1, 26);
       DEBAD(("***********Final classification = %d *****************\n", predicted_lb));

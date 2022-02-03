@@ -6,12 +6,17 @@
 #include "BaseLB.h"
 #include "TreeLB.decl.h"
 #include "json.hpp"
+#include "RandomForestModel.h"
 #include <vector>
 using json = nlohmann::json;
+using namespace rfmodel;
 
 #define DEBUG__TREE_LB_L1 0
 #define DEBUG__TREE_LB_L2 0
 #define DEBUG__TREE_LB_L3 0
+#define STATS_COUNT 29
+
+extern CkLBArgs _lb_args;
 
 void CreateTreeLB();
 
@@ -24,12 +29,22 @@ class TreeLBMessage
 {
  public:
   uint8_t level;
+  //TODO Metabalancer stats
+  double lb_data[STATS_COUNT];
   // WARNING: don't add any virtual methods here
 };
 
 class LevelLogic
 {
  public:
+
+    //TODO: Initialize if only metabalancer called
+    LevelLogic() {
+      rfModel = new ForestModel;
+      rfmodel->readModel(_lb_args.metaLbModelDir());
+    }
+
+
   virtual ~LevelLogic() {}
 
   /// return msg with lb stats for this PE. only needed at leaves
@@ -125,6 +140,7 @@ class LevelLogic
 
  protected:
   std::vector<TreeLBMessage*> stats_msgs;
+  ForestModel* rfmodel;
 };
 
 class LBTreeBuilder;
