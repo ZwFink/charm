@@ -21,6 +21,7 @@
 using namespace TreeStrategy;
 using json = nlohmann::json;
 
+//TODO: Metabalancer match index with appropriate lb type
 enum metalb_stats_types{
     ITER_NO,
     NUM_PROCS,
@@ -82,7 +83,7 @@ class LBStatsMsg_1 : public TreeLBMessage, public CMessage_LBStatsMsg_1
   unsigned int*
       order;  // list of obj ids sorted by load (ids are determined by position in oloads)
 
-
+      //Metebalancer statistics merge
   static TreeLBMessage* merge(std::vector<TreeLBMessage*>& msgs)
   {
     // TODO ideally have option of sorting objects
@@ -168,6 +169,7 @@ class LBStatsMsg_1 : public TreeLBMessage, public CMessage_LBStatsMsg_1
     return newMsg;
   }
 
+  //Predict load balancer based on statistics for metabalancer
   static int getPredictedLB(TreeLBMessage* msg, ForestModel* rfmodel) {
     double pe_count = msg->lb_data[NUM_PROCS];
     double avg_load = msg->lb_data[TOTAL_LOAD]/msg->lb_data[NUM_PROCS];
@@ -671,9 +673,9 @@ class RootLevel : public LevelLogic
 #endif
 
 
-    //TODO: If meta LB called
+    //TODO: If metabalancer LB called
     string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
-    //TODO: Initialize LB Add to wrappers
+    //TODO: metabalancer Initialize LB  and add to wrappers
     json config;
     config["tolerance"] = 1.1;
     this->repeat_strategies = false;
@@ -1006,9 +1008,9 @@ class NodeSetLevel : public LevelLogic
 
   virtual TreeLBMessage* loadBalance(IDM& idm)
   {
-    //TODO: If meta LB called
+    //TODO: If metabalancer LB called
     string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
-    //TODO: Initialize LB Add to wrappers
+    //TODO: Initialize LB & Add to wrappers
     json config;
     config["tolerance"] = 1.1;
     this->repeat_strategies = false;

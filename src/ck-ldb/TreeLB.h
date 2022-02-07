@@ -38,7 +38,7 @@ class LevelLogic
 {
  public:
 
-    //TODO: Initialize if only metabalancer called
+    //TODO: Initialize if only Metabalancer called
     LevelLogic() {
       rfModel = new ForestModel;
       rfmodel->readModel(_lb_args.metaLbModelDir());
