@@ -27,11 +27,11 @@ SOFTWARE.
 
 using namespace fastforest;
 
-void fastforest::details::softmaxTransformInplace(TreeEnsembleResponseType* out, int nOut) {
+void fastforest::details::softmaxTransformInplace(float* out, int nOut) {
   // Do softmax transformation inplace, mimicing exactly the Softmax function
   // in the src/common/math.h source file of xgboost.
   double norm = 0.;
-  TreeEnsembleResponseType wmax = *out;
+  float wmax = *out;
   int i = 1;
   for (; i < nOut; ++i) {
     wmax = std::max(out[i], wmax);
@@ -48,16 +48,16 @@ void fastforest::details::softmaxTransformInplace(TreeEnsembleResponseType* out,
   }
 }
 
-std::vector<TreeEnsembleResponseType> fastforest::FastForest::softmax(const FeatureType* array,
-                                                                      TreeEnsembleResponseType baseResponse) const {
-  auto out = std::vector<TreeEnsembleResponseType>(nClasses());
+std::vector<float> fastforest::FastForest::softmax(const float* array,
+                                                                      float baseResponse) const {
+  auto out = std::vector<float>(nClasses());
   softmax(array, out.data(), baseResponse);
   return out;
 }
 
-void fastforest::FastForest::softmax(const FeatureType* array,
-                                     TreeEnsembleResponseType* out,
-                                     TreeEnsembleResponseType baseResponse) const {
+void fastforest::FastForest::softmax(const float* array,
+                                     float* out,
+                                     float baseResponse) const {
   int nClass = nClasses();
   if (nClass <= 2) {
     throw std::runtime_error(
@@ -69,10 +69,10 @@ void fastforest::FastForest::softmax(const FeatureType* array,
   fastforest::details::softmaxTransformInplace(out, nClass);
 }
 
-void fastforest::FastForest::evaluate(const FeatureType* array,
-                                      TreeEnsembleResponseType* out,
+void fastforest::FastForest::evaluate(const float* array,
+                                      float* out,
                                       int nOut,
-                                      TreeEnsembleResponseType baseResponse) const {
+                                      float baseResponse) const {
   for (int i = 0; i < nOut; ++i) {
     out[i] = baseResponse + baseResponses_[i];
   }
@@ -89,9 +89,9 @@ void fastforest::FastForest::evaluate(const FeatureType* array,
   }
 }
 
-TreeEnsembleResponseType fastforest::FastForest::evaluateBinary(const FeatureType* array,
-                                                                TreeEnsembleResponseType baseResponse) const {
-  TreeEnsembleResponseType out{baseResponse + baseResponses_[0]};
+float fastforest::FastForest::evaluateBinary(const float* array,
+                                                                float baseResponse) const {
+  float out{baseResponse + baseResponses_[0]};
 
   for (int index : rootIndices_) {
     do {
@@ -131,16 +131,16 @@ FastForest fastforest::load_bin(std::istream& is) {
 
   is.read((char*)ff.rootIndices_.data(), nRootNodes * sizeof(int));
   is.read((char*)ff.cutIndices_.data(), nNodes * sizeof(CutIndexType));
-  is.read((char*)ff.cutValues_.data(), nNodes * sizeof(FeatureType));
+  is.read((char*)ff.cutValues_.data(), nNodes * sizeof(float));
   is.read((char*)ff.leftIndices_.data(), nNodes * sizeof(int));
   is.read((char*)ff.rightIndices_.data(), nNodes * sizeof(int));
-  is.read((char*)ff.responses_.data(), nLeaves * sizeof(TreeResponseType));
+  is.read((char*)ff.responses_.data(), nLeaves * sizeof(float));
   is.read((char*)ff.treeNumbers_.data(), nRootNodes * sizeof(int));
 
   int nBaseResponses;
   is.read((char*)&nBaseResponses, sizeof(int));
   ff.baseResponses_.resize(nBaseResponses);
-  is.read((char*)ff.baseResponses_.data(), nBaseResponses * sizeof(TreeEnsembleResponseType));
+  is.read((char*)ff.baseResponses_.data(), nBaseResponses * sizeof(float));
 
   return ff;
 }
@@ -159,14 +159,14 @@ void fastforest::FastForest::write_bin(std::string const& filename) const {
 
   os.write((const char*)rootIndices_.data(), nRootNodes * sizeof(int));
   os.write((const char*)cutIndices_.data(), nNodes * sizeof(CutIndexType));
-  os.write((const char*)cutValues_.data(), nNodes * sizeof(FeatureType));
+  os.write((const char*)cutValues_.data(), nNodes * sizeof(float));
   os.write((const char*)leftIndices_.data(), nNodes * sizeof(int));
   os.write((const char*)rightIndices_.data(), nNodes * sizeof(int));
-  os.write((const char*)responses_.data(), nLeaves * sizeof(TreeResponseType));
+  os.write((const char*)responses_.data(), nLeaves * sizeof(float));
   os.write((const char*)treeNumbers_.data(), nRootNodes * sizeof(int));
 
   os.write((const char*)&nBaseResponses, sizeof(int));
-  os.write((const char*)baseResponses_.data(), nBaseResponses * sizeof(TreeEnsembleResponseType));
+  os.write((const char*)baseResponses_.data(), nBaseResponses * sizeof(float));
   os.close();
 }
 
@@ -228,7 +228,7 @@ FastForest fastforest::load_txt(std::istream& file, std::vector<std::string>& fe
 
         auto splitstring = util::split(subline, '<');
         auto const& varName = splitstring[0];
-        FeatureType cutValue = std::stold(splitstring[1]);
+        float cutValue = std::stold(splitstring[1]);
         if (!varIndices.count(varName)) {
           if (fixFeatures) {
             throw std::runtime_error(info + "feature " + varName + " not in list of features");
@@ -261,7 +261,7 @@ FastForest fastforest::load_txt(std::istream& file, std::vector<std::string>& fe
       }
 
     } else {
-      auto output = util::numericAfterSubstr<TreeResponseType>(line, "leaf=");
+      auto output = util::numericAfterSubstr<float>(line, "leaf=");
       if (output.found) {
         std::stringstream ss(line);
         int index;
