@@ -11,6 +11,7 @@
 #include <limits>  // std::numeric_limits
 #include "json_fwd.hpp"
 #include "json.hpp"
+#include "XGBoost/fastforest.h"
 
 #define FLOAT_TO_INT_MULT 10000
 #define STATS_COUNT 29
@@ -53,7 +54,7 @@ enum metalb_stats_types{
     LOAD_KURTOSIS,
     TOTAL_OVERLOADED_PES,
 };
-string LB[8] = {"Greedy", "GreedyRefine", "Refine", "Greedy", "Greedy", "Greedy", "Refine", "GreedyRefine"};
+string LB[7] = {"Greedy", "Refine", "GreedyRefine", "Refine", "Distributed", "Metis", "Scotch"};
 
 class LLBMigrateMsg : public TreeLBMessage, public CMessage_LLBMigrateMsg
 {
@@ -169,7 +170,90 @@ class LBStatsMsg_1 : public TreeLBMessage, public CMessage_LBStatsMsg_1
     return newMsg;
   }
 
-  //Predict load balancer based on statistics for metabalancer
+    //TODO Meta Predict load balancer based on statistics for metabalancer
+    static int getPredictedLB_XG(TreeLBMessage* msg, auto xgboost) {
+      double pe_count = msg->lb_data[NUM_PROCS];
+      double avg_load = msg->lb_data[TOTAL_LOAD]/msg->lb_data[NUM_PROCS];
+      double max_load = msg->lb_data[MAX_LOAD];
+      double min_load = msg->lb_data[MIN_LOAD];
+      double avg_utilization = msg->lb_data[IDLE_TIME]/msg->lb_data[NUM_PROCS];
+      double min_utilization = msg->lb_data[UTILIZATION];
+      int iteration_n = (int) msg->lb_data[ITER_NO];
+      double avg_load_bg = msg->lb_data[TOTAL_LOAD_W_BG]/msg->lb_data[NUM_PROCS];
+      double min_load_bg = msg->lb_data[MIN_BG];
+      double max_load_bg = msg->lb_data[MAX_LOAD_W_BG];
+      int total_objs = (int) msg->lb_data[SUM_OBJ_COUNT];
+      double total_Kbytes = msg->lb_data[TOTAL_KBYTES];
+      double total_Kmsgs = msg->lb_data[TOTAL_KMSGS];
+      double total_outsidepeKmsgs = msg->lb_data[WITHIN_PE_KBYTES];
+      double total_outsidepeKbytes = msg->lb_data[OUTSIDE_PE_KBYTES];
+      double avg_bg = avg_load_bg - avg_load;
+      double avg_comm_neighbors = msg->lb_data[SUM_COMM_NEIGHBORS]/total_objs;
+      double max_comm_neighbors = msg->lb_data[MAX_COMM_NEIGHBORS];
+      double avg_obj_load = msg->lb_data[SUM_OBJ_LOAD]/total_objs;
+      double min_obj_load = msg->lb_data[MIN_OBJ_LOAD];
+      double max_obj_load = msg->lb_data[MAX_OBJ_LOAD];
+      double avg_hops = msg->lb_data[SUM_HOPS]/(total_Kmsgs*1024.0); // The messages are in K
+      double avg_hop_Kbytes = msg->lb_data[SUM_HOP_KBYTES]/(total_Kmsgs*1024.0);
+      double standard_dev = sqrt(load[LOAD_STDEV2]/msg->lb_data[NUM_PROCS]);
+      double skewness = msg->lb_data[LOAD_SKEWNESS]/(msg->lb_data[NUM_PROCS] * standard_dev * standard_dev *
+                                                     standard_dev);
+      double kurtosis = msg->lb_data[LOAD_KURTOSIS]/(msg->lb_data[NUM_PROCS] * standard_dev * standard_dev *
+                                                     standard_dev * standard_dev) - 3;
+      int ovld_pes = (int) msg->lb_data[TOTAL_OVERLOADED_PES];
+      double max_utilization = msg->lb_data[MAX_UTIL];
+      double app_iteration_time = msg->lb_data[MAX_ITER_TIME];
+
+      // Features to be output
+      double pe_imbalance = max_load/avg_load;
+      double pe_load_std_frac = standard_dev/avg_load;
+      double pe_with_bg_imb = max_load_bg/avg_load_bg;
+      double bg_load_frac = avg_bg/avg_load;
+      double pe_gain = max_load - avg_load;
+      double internal_bytes_frac = (total_Kbytes-total_outsidepeKbytes)/total_Kbytes;
+      double comm_comp_ratio = (_lb_args.alpha()*total_Kmsgs+_lb_args.beta()*total_Kbytes)/(avg_load*pe_count);
+
+      std::vector<double> test_data{pe_imbalance,
+                                    pe_load_std_frac,
+                                    pe_with_bg_imb,
+                                    0,
+                                    bg_load_frac,
+                                    pe_gain,
+                                    avg_utilization,
+                                    min_utilization,
+                                    max_utilization,
+                                    avg_obj_load,
+                                    min_obj_load,
+                                    max_obj_load,
+                                    total_objs / pe_count,
+                                    pe_count,
+                                    total_Kbytes,
+                                    total_Kmsgs,
+                                    total_outsidepeKbytes / total_Kbytes,
+                                    total_outsidepeKmsgs / total_Kmsgs,
+                                    internal_bytes_frac,
+                                    (total_Kbytes - total_outsidepeKbytes) / total_Kmsgs,
+                                    avg_comm_neighbors,
+                                    mslope,
+                                    aslope,
+                                    avg_hops,
+                                    avg_hop_Kbytes,
+                                    comm_comp_ratio};
+
+
+      std::vector<float> prob = xgboost.softmax(test_data.data());
+      int cur_pred = 0;
+      int cur_prob = 0;
+      for(int i = 0; i < prob.size(); ++i) {
+        if(prob[i] > cur_prob) {
+          cur_prob = prob[i];
+          cur_pred = i;
+        }
+      }
+      return cur_pred;
+    }
+
+  //TODO Meta Predict load balancer based on statistics for metabalancer
   static int getPredictedLB(TreeLBMessage* msg, ForestModel* rfmodel) {
     double pe_count = msg->lb_data[NUM_PROCS];
     double avg_load = msg->lb_data[TOTAL_LOAD]/msg->lb_data[NUM_PROCS];
@@ -674,7 +758,8 @@ class RootLevel : public LevelLogic
 
 
     //TODO: If metabalancer LB called
-    string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
+    //string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
+    string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::fill(stats_msgs), xgboost)];
     //TODO: metabalancer Initialize LB  and add to wrappers
     json config;
     config["tolerance"] = 1.1;
@@ -1009,7 +1094,8 @@ class NodeSetLevel : public LevelLogic
   virtual TreeLBMessage* loadBalance(IDM& idm)
   {
     //TODO: If metabalancer LB called
-    string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
+    //string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
+    string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::fill(stats_msgs), xgboost)];
     //TODO: Initialize LB & Add to wrappers
     json config;
     config["tolerance"] = 1.1;
@@ -1162,7 +1248,8 @@ class NodeLevel : public LevelLogic
   {
 
     //TODO: If meta LB called
-    string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
+    //string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
+    string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::fill(stats_msgs), xgboost)];
     //TODO: Initialize LB Add to wrappers
     json config;
     config["tolerance"] = 1.1;
