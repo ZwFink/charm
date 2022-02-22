@@ -27,11 +27,11 @@ SOFTWARE.
 
 using namespace fastforest;
 
-void fastforest::details::softmaxTransformInplace(float* out, int nOut) {
+void fastforest::details::softmaxTransformInplace(TreeEnsembleResponseType* out, int nOut) {
   // Do softmax transformation inplace, mimicing exactly the Softmax function
   // in the src/common/math.h source file of xgboost.
   double norm = 0.;
-  float wmax = *out;
+  TreeEnsembleResponseType wmax = *out;
   int i = 1;
   for (; i < nOut; ++i) {
     wmax = std::max(out[i], wmax);
@@ -48,16 +48,16 @@ void fastforest::details::softmaxTransformInplace(float* out, int nOut) {
   }
 }
 
-std::vector<float> fastforest::FastForest::softmax(const float* array,
-                                                                      float baseResponse) const {
-  auto out = std::vector<float>(nClasses());
+std::vector<TreeEnsembleResponseType> fastforest::FastForest::softmax(const FeatureType* array,
+                                                                      TreeEnsembleResponseType baseResponse) const {
+  auto out = std::vector<TreeEnsembleResponseType>(nClasses());
   softmax(array, out.data(), baseResponse);
   return out;
 }
 
-void fastforest::FastForest::softmax(const float* array,
-                                     float* out,
-                                     float baseResponse) const {
+void fastforest::FastForest::softmax(const FeatureType* array,
+                                     TreeEnsembleResponseType* out,
+                                     TreeEnsembleResponseType baseResponse) const {
   int nClass = nClasses();
   if (nClass <= 2) {
     throw std::runtime_error(
@@ -69,10 +69,10 @@ void fastforest::FastForest::softmax(const float* array,
   fastforest::details::softmaxTransformInplace(out, nClass);
 }
 
-void fastforest::FastForest::evaluate(const float* array,
-                                      float* out,
+void fastforest::FastForest::evaluate(const FeatureType* array,
+                                      TreeEnsembleResponseType* out,
                                       int nOut,
-                                      float baseResponse) const {
+                                      TreeEnsembleResponseType baseResponse) const {
   for (int i = 0; i < nOut; ++i) {
     out[i] = baseResponse + baseResponses_[i];
   }
@@ -89,9 +89,9 @@ void fastforest::FastForest::evaluate(const float* array,
   }
 }
 
-float fastforest::FastForest::evaluateBinary(const float* array,
-                                                                float baseResponse) const {
-  float out{baseResponse + baseResponses_[0]};
+TreeEnsembleResponseType fastforest::FastForest::evaluateBinary(const FeatureType* array,
+                                                                TreeEnsembleResponseType baseResponse) const {
+  TreeEnsembleResponseType out{baseResponse + baseResponses_[0]};
 
   for (int index : rootIndices_) {
     do {
@@ -131,16 +131,16 @@ FastForest fastforest::load_bin(std::istream& is) {
 
   is.read((char*)ff.rootIndices_.data(), nRootNodes * sizeof(int));
   is.read((char*)ff.cutIndices_.data(), nNodes * sizeof(CutIndexType));
-  is.read((char*)ff.cutValues_.data(), nNodes * sizeof(float));
+  is.read((char*)ff.cutValues_.data(), nNodes * sizeof(FeatureType));
   is.read((char*)ff.leftIndices_.data(), nNodes * sizeof(int));
   is.read((char*)ff.rightIndices_.data(), nNodes * sizeof(int));
-  is.read((char*)ff.responses_.data(), nLeaves * sizeof(float));
+  is.read((char*)ff.responses_.data(), nLeaves * sizeof(TreeResponseType));
   is.read((char*)ff.treeNumbers_.data(), nRootNodes * sizeof(int));
 
   int nBaseResponses;
   is.read((char*)&nBaseResponses, sizeof(int));
   ff.baseResponses_.resize(nBaseResponses);
-  is.read((char*)ff.baseResponses_.data(), nBaseResponses * sizeof(float));
+  is.read((char*)ff.baseResponses_.data(), nBaseResponses * sizeof(TreeEnsembleResponseType));
 
   return ff;
 }
@@ -159,128 +159,13 @@ void fastforest::FastForest::write_bin(std::string const& filename) const {
 
   os.write((const char*)rootIndices_.data(), nRootNodes * sizeof(int));
   os.write((const char*)cutIndices_.data(), nNodes * sizeof(CutIndexType));
-  os.write((const char*)cutValues_.data(), nNodes * sizeof(float));
+  os.write((const char*)cutValues_.data(), nNodes * sizeof(FeatureType));
   os.write((const char*)leftIndices_.data(), nNodes * sizeof(int));
   os.write((const char*)rightIndices_.data(), nNodes * sizeof(int));
-  os.write((const char*)responses_.data(), nLeaves * sizeof(float));
+  os.write((const char*)responses_.data(), nLeaves * sizeof(TreeResponseType));
   os.write((const char*)treeNumbers_.data(), nRootNodes * sizeof(int));
 
   os.write((const char*)&nBaseResponses, sizeof(int));
-  os.write((const char*)baseResponses_.data(), nBaseResponses * sizeof(float));
+  os.write((const char*)baseResponses_.data(), nBaseResponses * sizeof(TreeEnsembleResponseType));
   os.close();
-}
-
-FastForest fastforest::load_txt(std::string const& txtpath, std::vector<std::string>& features, int nClasses) {
-  const std::string info = "constructing FastForest from " + txtpath + ": ";
-
-  if (!util::exists(txtpath)) {
-    throw std::runtime_error(info + "file does not exists");
-  }
-
-  std::ifstream file(txtpath);
-  return load_txt(file, features, nClasses);
-}
-
-FastForest fastforest::load_txt(std::istream& file, std::vector<std::string>& features, int nClasses) {
-  if (nClasses < 2) {
-    throw std::runtime_error("Error in fastforest::load_txt : nClasses has to be at least two");
-  }
-
-  const std::string info = "constructing FastForest from istream: ";
-
-  FastForest ff;
-  ff.baseResponses_.resize(nClasses == 2 ? 1 : nClasses);
-
-  int treesSkipped = 0;
-
-  int nVariables = 0;
-  std::unordered_map<std::string, int> varIndices;
-  bool fixFeatures = false;
-
-  if (!features.empty()) {
-    fixFeatures = true;
-    nVariables = features.size();
-    for (int i = 0; i < nVariables; ++i) {
-      varIndices[features[i]] = i;
-    }
-  }
-
-  std::string line;
-
-  fastforest::detail::IndexMap nodeIndices;
-  fastforest::detail::IndexMap leafIndices;
-
-  int nPreviousNodes = 0;
-  int nPreviousLeaves = 0;
-
-  while (std::getline(file, line)) {
-    auto foundBegin = line.find("[");
-    auto foundEnd = line.find("]");
-    if (foundBegin != std::string::npos) {
-      auto subline = line.substr(foundBegin + 1, foundEnd - foundBegin - 1);
-      if (util::isInteger(subline) && !ff.responses_.empty()) {
-        terminateTree(ff, nPreviousNodes, nPreviousLeaves, nodeIndices, leafIndices, treesSkipped);
-      } else if (!util::isInteger(subline)) {
-        std::stringstream ss(line);
-        int index;
-        ss >> index;
-        line = ss.str();
-
-        auto splitstring = util::split(subline, '<');
-        auto const& varName = splitstring[0];
-        float cutValue = std::stold(splitstring[1]);
-        if (!varIndices.count(varName)) {
-          if (fixFeatures) {
-            throw std::runtime_error(info + "feature " + varName + " not in list of features");
-          }
-          varIndices[varName] = nVariables;
-          features.push_back(varName);
-          ++nVariables;
-        }
-        int yes;
-        int no;
-        auto output = util::numericAfterSubstr<int>(line, "yes=");
-        if (!output.failed) {
-          yes = output.value;
-        } else {
-          throw std::runtime_error(info + "problem while parsing the text dump");
-        }
-        output = util::numericAfterSubstr<int>(output.rest, "no=");
-        if (!output.failed) {
-          no = output.value;
-        } else {
-          throw std::runtime_error(info + "problem while parsing the text dump");
-        }
-
-        ff.cutValues_.push_back(cutValue);
-        ff.cutIndices_.push_back(varIndices[varName]);
-        ff.leftIndices_.push_back(yes);
-        ff.rightIndices_.push_back(no);
-        auto nNodeIndices = nodeIndices.size();
-        nodeIndices[index] = nNodeIndices + nPreviousNodes;
-      }
-
-    } else {
-      auto output = util::numericAfterSubstr<float>(line, "leaf=");
-      if (output.found) {
-        std::stringstream ss(line);
-        int index;
-        ss >> index;
-        line = ss.str();
-
-        ff.responses_.push_back(output.value);
-        auto nLeafIndices = leafIndices.size();
-        leafIndices[index] = nLeafIndices + nPreviousLeaves;
-      }
-    }
-  }
-  terminateTree(ff, nPreviousNodes, nPreviousLeaves, nodeIndices, leafIndices, treesSkipped);
-
-  if (nClasses > 2 && (ff.rootIndices_.size() + treesSkipped) % nClasses != 0) {
-    throw std::runtime_error(std::string{"Error in FastForest construction : Forest has "} +
-                             std::to_string(ff.rootIndices_.size()) + " trees, " + "which is not compatible with " +
-                             std::to_string(nClasses) + " classes!");
-  }
-
-  return ff;
 }

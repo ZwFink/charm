@@ -42,60 +42,60 @@ namespace fastforest {
     // The base response you have to use with older XGBoost versions might be
     // zero, so try to explicitely pass zero to the model evaluation if the
     // results from this library are incorrect.
-    const float defaultBaseResponse = 0.5;
+    const TreeEnsembleResponseType defaultBaseResponse = 0.5;
 
     namespace details {
 
-        void softmaxTransformInplace(float* out, int nOut);
+        void softmaxTransformInplace(TreeEnsembleResponseType* out, int nOut);
 
     }
 
     struct FastForest {
-        inline float operator()(const float* array,
-                                                   float baseResponse = defaultBaseResponse) const {
+        inline TreeEnsembleResponseType operator()(const FeatureType* array,
+                                                   TreeEnsembleResponseType baseResponse = defaultBaseResponse) const {
           return evaluateBinary(array, baseResponse);
         }
 
         template <int nClasses>
-        std::array<float, nClasses> softmax(
-                const float* array, float baseResponse = defaultBaseResponse) const {
+        std::array<TreeEnsembleResponseType, nClasses> softmax(
+                const FeatureType* array, TreeEnsembleResponseType baseResponse = defaultBaseResponse) const {
           // static softmax interface: no manual memory allocation, but requires to know nClasses at compile time
           static_assert(nClasses >= 3, "nClasses should be >= 3");
-          std::array<float, nClasses> out{};
+          std::array<TreeEnsembleResponseType, nClasses> out{};
           evaluate(array, out.data(), nClasses, baseResponse);
           details::softmaxTransformInplace(out.data(), nClasses);
           return out;
         }
 
         // dynamic softmax interface with manually allocated std::vector: simple but inefficient
-        std::vector<float> softmax(
-                const float* array, float baseResponse = defaultBaseResponse) const;
+        std::vector<TreeEnsembleResponseType> softmax(
+                const FeatureType* array, TreeEnsembleResponseType baseResponse = defaultBaseResponse) const;
 
         // softmax interface that is not a pure function, but no manual allocation and no compile-time knowledge needed
-        void softmax(const float* array,
-                     float* out,
-                     float baseResponse = defaultBaseResponse) const;
+        void softmax(const FeatureType* array,
+                     TreeEnsembleResponseType* out,
+                     TreeEnsembleResponseType baseResponse = defaultBaseResponse) const;
 
         void write_bin(std::string const& filename) const;
 
-        int nClasses() const { return baseResponses_.size() > 2 ? baseResponses_.size() : 7; }
+        int nClasses() const { return baseResponses_.size() > 2 ? baseResponses_.size() : 2; }
 
         std::vector<int> rootIndices_;
         std::vector<CutIndexType> cutIndices_;
-        std::vector<float> cutValues_;
+        std::vector<FeatureType> cutValues_;
         std::vector<int> leftIndices_;
         std::vector<int> rightIndices_;
-        std::vector<float> responses_;
+        std::vector<TreeResponseType> responses_;
         std::vector<int> treeNumbers_;
-        std::vector<float> baseResponses_;
+        std::vector<TreeEnsembleResponseType> baseResponses_;
 
     private:
-        void evaluate(const float* array,
-                      float* out,
+        void evaluate(const FeatureType* array,
+                      TreeEnsembleResponseType* out,
                       int nOut,
-                      float baseResponse) const;
+                      TreeEnsembleResponseType baseResponse) const;
 
-        float evaluateBinary(const float* array, float baseResponse) const;
+        TreeEnsembleResponseType evaluateBinary(const FeatureType* array, TreeEnsembleResponseType baseResponse) const;
     };
 
     FastForest load_txt(std::string const& txtpath, std::vector<std::string>& features, int nClasses = 2);
