@@ -1462,7 +1462,7 @@ class PELevel : public LevelLogic
     msg->lb_data[WITHIN_PE_KBYTES] = ((double) outsidepemsgs/1024.0);
     msg->lb_data[OUTSIDE_PE_KBYTES] = ((double) outsidepebytes/1024.0);
     msg->lb_data[SUM_COMM_NEIGHBORS] = msg->lb_data[MAX_COMM_NEIGHBORS] = num_nghbors;
-    msg->lb_data[SUM_OBJ_COUNT] = msg->lb_data[MAX_OBJ_COUNT] = _lbmgr->GetObjDataSz();
+    msg->lb_data[SUM_OBJ_COUNT] = msg->lb_data[MAX_OBJ_COUNT] = lbmgr->GetObjDataSz();
     msg->lb_data[SUM_OBJ_LOAD] = msg->lb_data[MAX_OBJ_LOAD] = msg->lb_data[MIN_OBJ_LOAD] = load;
     msg->lb_data[LOAD_STDEV2] = (load - prev_avg_load)*
             (load - prev_avg_load);
