@@ -11,7 +11,6 @@
 #include <limits>  // std::numeric_limits
 #include "json_fwd.hpp"
 #include "json.hpp"
-#include "XGBoost/fastforest.h"
 
 #define FLOAT_TO_INT_MULT 10000
 #define STATS_COUNT 29

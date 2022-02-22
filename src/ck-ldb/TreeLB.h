@@ -6,7 +6,7 @@
 #include "BaseLB.h"
 #include "TreeLB.decl.h"
 #include "json.hpp"
-#include "XGBoost/fastforest.h"
+#include "fastforest.h"
 #include <vector>
 using json = nlohmann::json;
 //using namespace rfmodel;
@@ -43,7 +43,7 @@ class LevelLogic
       //rfModel = new ForestModel;
       //rfmodel->readModel(_lb_args.metaLbModelDir());
       std::vector<std::string> features{"f0",  "f1",  "f2",  "f3",  "f4", "f5", "f6",  "f7",  "f8",  "f9",  "f10", "f11", "f12",  "f13",  "f14",  "f15",  "f16", "f17", "f18",  "f19",  "f20",  "f21",  "f22", "f23", "f24"};
-      xgboost = fastforest::load_txt("XGBoost/model/model.txt", features);
+      xgboost = fastforest::load_txt("XGBoost/model/model.txt", features, 7);
     }
 
 
