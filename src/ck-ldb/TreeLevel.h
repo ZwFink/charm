@@ -152,7 +152,7 @@ class LBStatsMsg_1 : public TreeLBMessage, public CMessage_LBStatsMsg_1
       newMsg->lb_data[MAX_COMM_NEIGHBORS] = fmax(msg[i].lb_data[MAX_COMM_NEIGHBORS], newMsg->lb_data[MAX_COMM_NEIGHBORS]);
 
       newMsg->lb_data[SUM_OBJ_COUNT] += msg[i].lb_data[SUM_OBJ_COUNT];
-      newMsg->lb_data[MAX_OBJ_COUNT] = fmax(msg[i].[MAX_OBJ_COUNT], newMsg->lb_data[MAX_OBJ_COUNT]);
+      newMsg->lb_data[MAX_OBJ_COUNT] = fmax(msg[i].lb_data[MAX_OBJ_COUNT], newMsg->lb_data[MAX_OBJ_COUNT]);
       newMsg->lb_data[MIN_OBJ_LOAD] = fmin(msg[i].lb_data[MIN_OBJ_LOAD], newMsg->lb_data[MIN_OBJ_LOAD]);
       newMsg->lb_data[SUM_OBJ_LOAD] += msg[i].lb_data[SUM_OBJ_LOAD];
       newMsg->lb_data[MAX_OBJ_LOAD] = fmax(msg[i].lb_data[MAX_OBJ_LOAD], newMsg->lb_data[MAX_OBJ_LOAD]);
@@ -195,7 +195,7 @@ class LBStatsMsg_1 : public TreeLBMessage, public CMessage_LBStatsMsg_1
       double max_obj_load = msg->lb_data[MAX_OBJ_LOAD];
       double avg_hops = msg->lb_data[SUM_HOPS]/(total_Kmsgs*1024.0); // The messages are in K
       double avg_hop_Kbytes = msg->lb_data[SUM_HOP_KBYTES]/(total_Kmsgs*1024.0);
-      double standard_dev = sqrt(lb_data[LOAD_STDEV2]/msg->lb_data[NUM_PROCS]);
+      double standard_dev = sqrt(msg->lb_data[LOAD_STDEV2]/msg->lb_data[NUM_PROCS]);
       double skewness = msg->lb_data[LOAD_SKEWNESS]/(msg->lb_data[NUM_PROCS] * standard_dev * standard_dev *
                                                      standard_dev);
       double kurtosis = msg->lb_data[LOAD_KURTOSIS]/(msg->lb_data[NUM_PROCS] * standard_dev * standard_dev *
@@ -215,7 +215,7 @@ class LBStatsMsg_1 : public TreeLBMessage, public CMessage_LBStatsMsg_1
       double internal_bytes_frac = (total_Kbytes-total_outsidepeKbytes)/total_Kbytes;
       double comm_comp_ratio = (_lb_args.alpha()*total_Kmsgs+_lb_args.beta()*total_Kbytes)/(avg_load*pe_count);
 
-      std::vector<double> test_data{pe_imbalance,
+      std::vector<float> test_data{pe_imbalance,
                                     pe_load_std_frac,
                                     pe_with_bg_imb,
                                     0,
@@ -763,7 +763,7 @@ class RootLevel : public LevelLogic
 
     //TODO: If metabalancer LB called
     //string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
-    std::string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::fill(stats_msgs), xgboost)];
+    std::string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::merge(stats_msgs), xgboost)];
     //TODO: metabalancer Initialize LB  and add to wrappers
     json config;
     config["tolerance"] = 1.1;
@@ -1099,7 +1099,7 @@ class NodeSetLevel : public LevelLogic
   {
     //TODO: If metabalancer LB called
     //string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
-    string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::fill(stats_msgs), xgboost)];
+    std::string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::fill(stats_msgs), xgboost)];
     //TODO: Initialize LB & Add to wrappers
     json config;
     config["tolerance"] = 1.1;
@@ -1253,7 +1253,7 @@ class NodeLevel : public LevelLogic
 
     //TODO: If meta LB called
     //string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
-    string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::fill(stats_msgs), xgboost)];
+    std::string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::fill(stats_msgs), xgboost)];
     //TODO: Initialize LB Add to wrappers
     json config;
     config["tolerance"] = 1.1;
