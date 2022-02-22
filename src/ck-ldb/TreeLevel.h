@@ -254,6 +254,7 @@ class LBStatsMsg_1 : public TreeLBMessage, public CMessage_LBStatsMsg_1
     }
 
   //TODO Meta Predict load balancer based on statistics for metabalancer
+  /*
   static int getPredictedLB(TreeLBMessage* msg, ForestModel* rfmodel) {
     double pe_count = msg->lb_data[NUM_PROCS];
     double avg_load = msg->lb_data[TOTAL_LOAD]/msg->lb_data[NUM_PROCS];
@@ -324,6 +325,7 @@ class LBStatsMsg_1 : public TreeLBMessage, public CMessage_LBStatsMsg_1
                                   comm_comp_ratio};
     return rfmodel->forestTest(test_data, 1, 26);
   }
+   */
 
   template <typename O, typename P>
   static float fill(std::vector<TreeLBMessage*> msgs, std::vector<O>& objs,
