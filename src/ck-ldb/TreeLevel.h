@@ -1099,7 +1099,7 @@ class NodeSetLevel : public LevelLogic
   {
     //TODO: If metabalancer LB called
     //string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
-    std::string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::fill(stats_msgs), xgboost)];
+    std::string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::merge(stats_msgs), xgboost)];
     //TODO: Initialize LB & Add to wrappers
     json config;
     config["tolerance"] = 1.1;
@@ -1253,7 +1253,7 @@ class NodeLevel : public LevelLogic
 
     //TODO: If meta LB called
     //string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
-    std::string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::fill(stats_msgs), xgboost)];
+    std::string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::merge(stats_msgs), xgboost)];
     //TODO: Initialize LB Add to wrappers
     json config;
     config["tolerance"] = 1.1;
@@ -1423,9 +1423,10 @@ class PELevel : public LevelLogic
 
 
     //TODO Meta Stats initialization
-    double idle_time, bg_walltime, cpu_bgtime, load, prev_avg_load;
-    _lbmgr->TotalTime(&idle_time, &load);
-    _lbmgr->BackgroundLoad(&bg_walltime, &cpu_bgtime);
+    double idle_time, cpu_bgtime, load, prev_avg_load;
+    double bg_walltimed;
+    lbmgr->TotalTime(&idle_time, &load);
+    lbmgr->BackgroundLoad(&bg_walltimed, &cpu_bgtime);
     idle_time -= prev_idle;
     load -= prev_load;
 
@@ -1439,13 +1440,13 @@ class PELevel : public LevelLogic
     int bytes, msgs, outsidepemsgs, outsidepebytes, num_nghbors, hops, hopbytes;
     bytes = msgs = outsidepemsgs = outsidepebytes = num_nghbors = hops = hopbytes = 0;
     if(_lb_args.traceComm()) {
-      _lbmgr->GetCommInfo(bytes, msgs, outsidepemsgs,
+      lbmgr->GetCommInfo(bytes, msgs, outsidepemsgs,
                           outsidepebytes, num_nghbors, hops, hopbytes);
     }
 
-    int sync_for_bg = adaptive_struct.total_syncs_called +
-                      _lbmgr->GetObjDataSz();
-    bg_walltime = bg_walltime * _lbmgr->GetObjDataSz() / sync_for_bg;
+    //TODO
+    int sync_for_bg = itn;
+    bg_walltimed = bg_walltimed * lbmgr->GetObjDataSz() / sync_for_bg;
 
     msg->lb_data[NUM_PROCS] = 1;
     msg->lb_data[TOTAL_LOAD] = msg->lb_data[MAX_LOAD] = msg->lb_data[MIN_LOAD] = load;
@@ -1455,7 +1456,7 @@ class PELevel : public LevelLogic
       msg->lb_data[IDLE_TIME] = msg->lb_data[UTILIZATION] = msg->lb_data[MAX_UTIL] = load/(idle_time + load);
     }
 
-    msg->lb_data[TOTAL_LOAD_W_BG] = msg->lb_data[MIN_BG] = msg->lb_data[MAX_LOAD_W_BG] = msg->lb_data[TOTAL_LOAD] + bg_walltime;
+    msg->lb_data[TOTAL_LOAD_W_BG] = msg->lb_data[MIN_BG] = msg->lb_data[MAX_LOAD_W_BG] = msg->lb_data[TOTAL_LOAD] + bg_walltimed;
     msg->lb_data[TOTAL_KBYTES] = ((double) bytes/1024.0);
     msg->lb_data[TOTAL_KMSGS] = ((double) msgs/ 1024.0);
     msg->lb_data[WITHIN_PE_KBYTES] = ((double) outsidepemsgs/1024.0);
