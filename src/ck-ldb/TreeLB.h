@@ -20,8 +20,6 @@ extern CkLBArgs _lb_args;
 
 void CreateTreeLB();
 
-std::vector<std::string> features{"f0",  "f1",  "f2",  "f3",  "f4", "f5", "f6",  "f7",  "f8",  "f9",  "f10", "f11", "f12",  "f13",  "f14",  "f15",  "f16", "f17", "f18",  "f19",  "f20",  "f21",  "f22", "f23", "f24"};
-
 /**
  * Base class for messages defined/used by LevelLogic classes
  * IMPORTANT: The derived msg class T must first inherit from this, and then from
@@ -44,6 +42,8 @@ class LevelLogic
     LevelLogic() {
       //rfModel = new ForestModel;
       //rfmodel->readModel(_lb_args.metaLbModelDir());
+      std::vector<std::string> features{"f0",  "f1",  "f2",  "f3",  "f4", "f5", "f6",  "f7",  "f8",  "f9",  "f10", "f11", "f12",  "f13",  "f14",  "f15",  "f16", "f17", "f18",  "f19",  "f20",  "f21",  "f22", "f23", "f24"};
+      xgboost = fastforest::load_txt("XGBoost/model/model.txt", features);
     }
 
 
@@ -144,7 +144,7 @@ class LevelLogic
   std::vector<TreeLBMessage*> stats_msgs;
   //TODO Meta model
   //ForestModel* rfmodel;
-  const auto xgboost = fastforest::load_txt("XGBoost/model/model.txt", features);
+  fastforest::FastForest xgboost;
 };
 
 class LBTreeBuilder;
