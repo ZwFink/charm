@@ -541,7 +541,7 @@ TreeLB.o: TreeLB.C TreeBuilder.h TreeLB.h BaseLB.h LBManager.h \
  ../include/TopoManager.h ../include/topomanager_config.h \
  ../include/converse.h TreeStrategyBase.h TreeStrategyFactory.h greedy.h \
  pheap.h refine.h TreeLevel.decl.h TreeLevel.def.h spanningTree.h \
- TreeLB.def.h
+ TreeLB.def.h fastforest.h
 
 arrayRedistributor.o: arrayRedistributor.C charm++.h charm.h converse.h \
  conv-header.h conv-config.h conv-autoconfig.h conv-common.h \
