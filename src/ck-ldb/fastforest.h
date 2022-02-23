@@ -26,6 +26,7 @@ SOFTWARE.
 #include <istream>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace fastforest {
 
@@ -38,6 +39,8 @@ namespace fastforest {
     // This integer type stores the indices of the feature employed in each cut.
     // Set to `unsigned char` for most compact fastforest ofjects if you have less than 256 features.
     typedef unsigned int CutIndexType;
+
+    typedef std::unordered_map<int, int> IndexMap;
 
     // The base response you have to use with older XGBoost versions might be
     // zero, so try to explicitely pass zero to the model evaluation if the
@@ -97,6 +100,11 @@ namespace fastforest {
 
         TreeEnsembleResponseType evaluateBinary(const FeatureType* array, TreeEnsembleResponseType baseResponse) const;
     };
+
+    void correctIndices(std::vector<int>::iterator begin,
+                        std::vector<int>::iterator end,
+                        IndexMap const& nodeIndices,
+                        IndexMap const& leafIndices);
 
     FastForest load_txt(std::string const& txtpath, std::vector<std::string>& features, int nClasses = 2);
     FastForest load_txt(std::istream& is, std::vector<std::string>& features, int nClasses = 2);
