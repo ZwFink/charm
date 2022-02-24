@@ -214,7 +214,7 @@ class LBStatsMsg_1 : public TreeLBMessage, public CMessage_LBStatsMsg_1
       double internal_bytes_frac = (total_Kbytes-total_outsidepeKbytes)/total_Kbytes;
       double comm_comp_ratio = (_lb_args.alpha()*total_Kmsgs+_lb_args.beta()*total_Kbytes)/(avg_load*pe_count);
 
-      std::vector<float> test_data{pe_imbalance,
+      std::vector<double> test_data{pe_imbalance,
                                     pe_load_std_frac,
                                     pe_with_bg_imb,
                                     0,
@@ -242,9 +242,9 @@ class LBStatsMsg_1 : public TreeLBMessage, public CMessage_LBStatsMsg_1
                                     comm_comp_ratio};
 
 
-      std::vector<float> prob = xgboost.softmax(test_data.data());
+      std::vector<double> prob = xgboost.softmax(test_data.data());
       int cur_pred = 0;
-      int cur_prob = 0;
+      double cur_prob = 0.0;
       for(int i = 0; i < prob.size(); ++i) {
         if(prob[i] > cur_prob) {
           cur_prob = prob[i];

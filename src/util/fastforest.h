@@ -30,12 +30,12 @@ SOFTWARE.
 
 namespace fastforest {
 
-    // The floating point number type that will be used to accept features and store cut values
-    typedef float FeatureType;
-    // Tue floating point number type that the individual trees return their responses in
-    typedef float TreeResponseType;
-    // The floating point number type that is used to sum the individual tree responses
-    typedef float TreeEnsembleResponseType;
+    // The double number type that will be used to accept features and store cut values
+    typedef double FeatureType;
+    // Tue double number type that the individual trees return their responses in
+    typedef double TreeResponseType;
+    // The double number type that is used to sum the individual tree responses
+    typedef double TreeEnsembleResponseType;
     // This integer type stores the indices of the feature employed in each cut.
     // Set to `unsigned char` for most compact fastforest ofjects if you have less than 256 features.
     typedef unsigned int CutIndexType;

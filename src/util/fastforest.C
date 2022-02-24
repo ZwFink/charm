@@ -155,7 +155,7 @@ void fastforest::details::softmaxTransformInplace(TreeEnsembleResponseType* out,
   }
   i = 0;
   for (; i < nOut; ++i) {
-    out[i] /= static_cast<float>(norm);
+    out[i] /= static_cast<double>(norm);
   }
 }
 
