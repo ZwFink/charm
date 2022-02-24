@@ -541,7 +541,7 @@ TreeLB.o: TreeLB.C TreeBuilder.h TreeLB.h BaseLB.h LBManager.h \
  ../include/TopoManager.h ../include/topomanager_config.h \
  ../include/converse.h TreeStrategyBase.h TreeStrategyFactory.h greedy.h \
  pheap.h refine.h TreeLevel.decl.h TreeLevel.def.h spanningTree.h \
- TreeLB.def.h fastforest.h
+ TreeLB.def.h
 
 arrayRedistributor.o: arrayRedistributor.C charm++.h charm.h converse.h \
  conv-header.h conv-config.h conv-autoconfig.h conv-common.h \
@@ -1291,8 +1291,6 @@ edgelist.o: edgelist.C graphdefs.h converse.h conv-header.h conv-config.h \
  conv-mach-opt.h lrts-common.h cmiqueue.h pup_c.h pup_c_functions.h \
  lrtslock.h queueing.h conv-cpm.h conv-cpath.h conv-qd.h conv-random.h \
  conv-lists.h conv-trace.h persistent.h cmirdmautils.h debug-conv.h
-
-fastforest.o: fastforest.C fastforest.h
 
 forestTest.o: forestTest.C RandomForestModel.h charm.h converse.h \
  conv-header.h conv-config.h conv-autoconfig.h conv-common.h \
