@@ -40,7 +40,16 @@ namespace fastforest {
     // Set to `unsigned char` for most compact fastforest ofjects if you have less than 256 features.
     typedef unsigned int CutIndexType;
 
-    typedef std::unordered_map<int, int> IndexMap;
+    namespace detail {
+
+        typedef std::unordered_map<int, int> IndexMap;
+
+        void correctIndices(std::vector<int>::iterator begin,
+                            std::vector<int>::iterator end,
+                            IndexMap const& nodeIndices,
+                            IndexMap const& leafIndices);
+
+    }
 
     // The base response you have to use with older XGBoost versions might be
     // zero, so try to explicitely pass zero to the model evaluation if the
