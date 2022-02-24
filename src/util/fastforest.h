@@ -110,11 +110,6 @@ namespace fastforest {
         TreeEnsembleResponseType evaluateBinary(const FeatureType* array, TreeEnsembleResponseType baseResponse) const;
     };
 
-    void correctIndices(std::vector<int>::iterator begin,
-                        std::vector<int>::iterator end,
-                        IndexMap const& nodeIndices,
-                        IndexMap const& leafIndices);
-
     FastForest load_txt(std::string const& txtpath, std::vector<std::string>& features, int nClasses = 2);
     FastForest load_txt(std::istream& is, std::vector<std::string>& features, int nClasses = 2);
     FastForest load_bin(std::string const& txtpath);
