@@ -18,6 +18,8 @@ using json = nlohmann::json;
 
 extern CkLBArgs _lb_args;
 
+int metaTreeLB = 0;
+
 void CreateTreeLB();
 
 /**
@@ -42,8 +44,12 @@ class LevelLogic
     LevelLogic() {
       //rfModel = new ForestModel;
       //rfmodel->readModel(_lb_args.metaLbModelDir());
-      std::vector<std::string> features{"f0",  "f1",  "f2",  "f3",  "f4", "f5", "f6",  "f7",  "f8",  "f9",  "f10", "f11", "f12",  "f13",  "f14",  "f15",  "f16", "f17", "f18",  "f19",  "f20",  "f21",  "f22", "f23", "f24"};
-      xgboost = fastforest::load_txt("XGBoost/model/model.txt", features, 7);
+      if(metaTreeLB) {
+        std::vector <std::string> features{"f0", "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10", "f11",
+                                           "f12", "f13", "f14", "f15", "f16", "f17", "f18", "f19", "f20", "f21", "f22",
+                                           "f23", "f24"};
+        xgboost = fastforest::load_txt("XGBoost/model/model.txt", features, 7);
+      }
     }
 
 
@@ -159,7 +165,10 @@ class TreeLB : public CBase_TreeLB
   {
     loadConfigFile(opts);
     init(opts);
+    char **argv = CkGetArgv();
+    metaTreeLB = CmiGetArgFlagDesc(argv, "+metaTreeLB", "use meta LB within tree LB");
   }
+
   TreeLB(CkMigrateMessage* m) : CBase_TreeLB(m) {}
   virtual ~TreeLB();
 
