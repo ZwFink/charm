@@ -198,7 +198,7 @@ void _loadbalancerInit()
   CmiGetArgStringDesc(argv, "+MetaLBModelDir", &_lb_args.metaLbModelDir(),
                       "Use this directory to read model for MetaLB");
 
-  _lb_args.metaLbModelDir() = CmiGetArgFlagDesc(argv, "+TreeMetaLB", "use MetaLB within TreeLB");
+  _lb_args.treeMetaLbOn() = CmiGetArgFlagDesc(argv, "+TreeMetaLB", "use MetaLB within TreeLB");
 
   if (_lb_args.metaLbOn() && _lb_args.metaLbModelDir() != nullptr)
   {
