@@ -128,7 +128,7 @@ class LBStatsMsg_1 : public TreeLBMessage, public CMessage_LBStatsMsg_1
       pe_cnt += msg_npes;
 
       //TODO Meta merge meta stats
-      if (metaTreeLB) {
+      if (_lb_args.treeMetaLbOn()) {
         newMsg->lb_data[NUM_PROCS] += msg[i].lb_data[NUM_PROCS];
 
         newMsg->lb_data[TOTAL_LOAD] += msg[i].lb_data[TOTAL_LOAD];
@@ -764,7 +764,7 @@ class RootLevel : public LevelLogic
 
     //TODO: If metabalancer LB called
     //string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
-    if(metaTreeLB) {
+    if(_lb_args.treeMetaLbOn()) {
       std::string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::merge(stats_msgs), xgboost)];
 
       //TODO: metabalancer Initialize LB  and add to wrappers
@@ -1100,7 +1100,7 @@ class NodeSetLevel : public LevelLogic
 
   virtual TreeLBMessage* loadBalance(IDM& idm)
   {
-    if(metaTreeLB) {
+    if(_lb_args.treeMetaLbOn()) {
       //TODO: If metabalancer LB called
       //string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
       std::string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::merge(stats_msgs), xgboost)];
@@ -1256,7 +1256,7 @@ class NodeLevel : public LevelLogic
   LLBMigrateMsg* withinNodeLoadBalance()
   {
 
-    if(metaTreeLB) {
+    if(_lb_args.treeMetaLbOn()) {
       //TODO: If meta LB called
       //string predicted_lb = LB[LBStatsMsg_1::getPredictedLB(LBStatsMsg_1::fill(stats_msgs), rfmodel)];
       std::string predicted_lb = LB[LBStatsMsg_1::getPredictedLB_XG(LBStatsMsg_1::merge(stats_msgs), xgboost)];
@@ -1429,7 +1429,7 @@ class PELevel : public LevelLogic
     // fprintf(stderr, "[%d] my bgload is %f %f\n", mype, msg->bgloads[0], bg_walltime);
 
 
-    if(metaTreeLB) {
+    if(_lb_args.treeMetaLbOn()) {
       //TODO Meta Stats initialization
       double idle_time, cpu_bgtime, load, prev_avg_load;
       double bg_walltimed;
