@@ -32,6 +32,7 @@
 
 #include "LBManager.h"
 #include "RandomForestModel.h"
+#include "fastforest.h"
 #include <vector>
 
 #include "MetaBalancer.decl.h"
@@ -86,10 +87,13 @@ enum metalb_stats_types{
 
 class MetaBalancer : public CBase_MetaBalancer {
 public:
- MetaBalancer(void) : rFmodel(NULL) { init(); }
+ MetaBalancer(void) : rFmodel(NULL), xgboost(NULL) { init(); }
  MetaBalancer(CkMigrateMessage* m) : CBase_MetaBalancer(m) { init(); }
  ~MetaBalancer() {
-   if (CkMyPe() == 0) delete rFmodel;
+   if (CkMyPe() == 0) {
+     delete rFmodel;
+     delete xgboost;
+   }
  }
 
 private:
@@ -176,6 +180,7 @@ private:
   int total_ovld_pes;
   int current_balancer;
   ForestModel* rFmodel;
+  fastforest::FastForest xgboost;
 
   struct AdaptiveData {
     double iteration;
