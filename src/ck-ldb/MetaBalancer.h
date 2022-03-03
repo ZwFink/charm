@@ -87,12 +87,11 @@ enum metalb_stats_types{
 
 class MetaBalancer : public CBase_MetaBalancer {
 public:
- MetaBalancer(void) : rFmodel(NULL), xgboost(NULL) { init(); }
+ MetaBalancer(void) : rFmodel(NULL) { init(); }
  MetaBalancer(CkMigrateMessage* m) : CBase_MetaBalancer(m) { init(); }
  ~MetaBalancer() {
    if (CkMyPe() == 0) {
      delete rFmodel;
-     delete xgboost;
    }
  }
 
