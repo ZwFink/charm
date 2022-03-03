@@ -54,7 +54,7 @@ using json = nlohmann::json;
     LOAD_KURTOSIS,
     TOTAL_OVERLOADED_PES,
 };*/
-std::string LB[CLASSES] = {"Greedy", "Refine", "GreedyRefine", "Refine", "Distributed", "Metis", "Scotch"};
+std::string LB[CLASSES] = {"Greedy", "RefineA", "GreedyRefine"};
 
 class LLBMigrateMsg : public TreeLBMessage, public CMessage_LLBMigrateMsg
 {
