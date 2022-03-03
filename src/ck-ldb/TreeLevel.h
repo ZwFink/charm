@@ -13,7 +13,8 @@
 #include "json.hpp"
 
 #define FLOAT_TO_INT_MULT 10000
-#define STATS_COUNT 29
+//#define STATS_COUNT 29
+//#define CLASSES 3
 
 // ----------------------- msgs -----------------------
 
@@ -53,7 +54,7 @@ using json = nlohmann::json;
     LOAD_KURTOSIS,
     TOTAL_OVERLOADED_PES,
 };*/
-std::string LB[7] = {"Greedy", "Refine", "GreedyRefine", "Refine", "Distributed", "Metis", "Scotch"};
+std::string LB[CLASSES] = {"Greedy", "Refine", "GreedyRefine", "Refine", "Distributed", "Metis", "Scotch"};
 
 class LLBMigrateMsg : public TreeLBMessage, public CMessage_LLBMigrateMsg
 {
