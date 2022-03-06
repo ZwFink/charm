@@ -37,6 +37,7 @@ using std::max;
 CkReductionMsg* lbDataCollection(int nMsg, CkReductionMsg** msgs) {
   double *lb_data;
   lb_data = (double*)msgs[0]->getData();
+  lb_data = (double*)msgs[0]->getData();
   for (int i = 1; i < nMsg; i++) {
     CkAssert(msgs[i]->getSize() == STATS_COUNT*sizeof(double));
     if (msgs[i]->getSize() != STATS_COUNT*sizeof(double)) {
@@ -302,9 +303,9 @@ bool MetaBalancer::AddLoad(int it_n, double load) {
   int index = it_n % VEC_SIZE;
   total_count_vec[index]++;
   adaptive_struct.total_syncs_called++;
-  /*CkPrintf("At PE %d Total contribution for iteration %d is %d \
+  DEBAD("At PE %d Total contribution for iteration %d is %d \
       total objs %d\n", CkMyPe(), it_n, total_count_vec[index],
-      lbmanager->GetObjDataSz());*/
+      lbmanager->GetObjDataSz());
 
   if (it_n <= adaptive_struct.finished_iteration_no) {
     CkAbort("Error!! Received load for iteration that has contributed\n");
@@ -501,7 +502,7 @@ void MetaBalancer::ReceiveMinStats(double *load, int n) {
 //        avg_hops, avg_hop_bytes, _lb_args.alpha(), _lb_args.beta(),
 //        app_iteration_time);
 
-   /* DEBAD(
+   DEBAD(
         ("Features:%lf %lf %lf %lf %lf %lf %lf %lf \
        %lf %lf %lf %lf %lf %lf %lf %lf %lf \
        %lf %lf %lf %lf %lf %lf %lf %d %lf\n",
@@ -510,7 +511,7 @@ void MetaBalancer::ReceiveMinStats(double *load, int n) {
          max_obj_load, total_objs / pe_count, pe_count, total_Kbytes, total_Kmsgs,
          total_outsidepeKbytes / total_Kbytes, total_outsidepeKmsgs / total_Kmsgs,
          internal_bytes_frac, avg_comm_neighbors, mslope, aslope, avg_hops,
-         avg_hop_Kbytes, comm_comp_ratio, chare_pup_size, app_iteration_time));*/
+         avg_hop_Kbytes, comm_comp_ratio, chare_pup_size, app_iteration_time));
 
     // Read test data as a data structure
     if (_lb_args.metaLbModelDir() != NULL) {
