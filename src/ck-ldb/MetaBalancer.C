@@ -302,9 +302,9 @@ bool MetaBalancer::AddLoad(int it_n, double load) {
   int index = it_n % VEC_SIZE;
   total_count_vec[index]++;
   adaptive_struct.total_syncs_called++;
-  //CkPrintf("At PE %d Total contribution for iteration %d is %d \
+  /*CkPrintf("At PE %d Total contribution for iteration %d is %d \
       total objs %d\n", CkMyPe(), it_n, total_count_vec[index],
-      lbmanager->GetObjDataSz());
+      lbmanager->GetObjDataSz());*/
 
   if (it_n <= adaptive_struct.finished_iteration_no) {
     CkAbort("Error!! Received load for iteration that has contributed\n");
