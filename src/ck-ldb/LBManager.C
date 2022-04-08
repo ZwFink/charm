@@ -549,6 +549,13 @@ void LBManager::init(void)
   {
     CkSyncBarrier::object()->addReceiver([this](void) { this->InvokeLB(); });
   }
+
+  if (LBSimulation::dumpStep >= 0)
+  {
+    const std::string filename =
+        std::string(LBSimulation::dumpFile) + "." + std::to_string(CkMyPe());
+    dumpFile.open(filename, std::ios::out);
+  }
 }
 
 int LBManager::AddStartLBFn(std::function<void()> fn)

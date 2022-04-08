@@ -3,6 +3,7 @@
 #ifndef TREELEVEL_H
 #define TREELEVEL_H
 
+#include "LBSimulation.h"
 #include "TopoManager.h"
 #include "TreeLB.h"
 #include "TreeStrategyBase.h"
@@ -1317,6 +1318,32 @@ class PELevel : public LevelLogic
     else
       msg->bgloads[0] = float(bg_walltime);
     // fprintf(stderr, "[%d] my bgload is %f %f\n", mype, msg->bgloads[0], bg_walltime);
+
+    // TODO: Make this customizable a la how it used to be, this just dumps every step
+    // whenever the +LBDump flag is passed in
+    if (LBSimulation::dumpStep >= 0)
+    {
+      json j;
+      j["step"] = lbmgr->step();
+      j["bgload"] = bg_walltime;
+
+      for (const auto& obj : allLocalObjs)
+      {
+        json jsonObj;
+
+        jsonObj["id"] = obj.objID();
+        jsonObj["migratable"] = obj.migratable;
+        jsonObj["wallTime"] = obj.wallTime;
+        if (!obj.vectorLoad.empty())
+          jsonObj["vectorLoad"] = obj.vectorLoad;
+        if (!obj.position.empty())
+          jsonObj["position"] = obj.position;
+
+        j["objects"].push_back(jsonObj);
+      }
+
+      lbmgr->dumpFile << j << std::endl;
+    }
 
     return msg;
   }
