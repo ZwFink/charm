@@ -54,6 +54,10 @@ class bar {
 #ifndef __CK_PUP_H
 #define __CK_PUP_H
 
+#ifndef COPY_PERFORATE_BYTES
+#define COPY_PERFORATE_BYTES 1
+#endif
+
 #include <stdio.h> /*<- for "FILE *" */
 #include <type_traits>
 #include <utility>
@@ -455,6 +459,8 @@ class toMem : public mem {
   virtual void pup_buffer(void *&p, size_t n, size_t itemSize, dataType t, std::function<void *(size_t)> allocate, std::function<void (void *)> deallocate);
 
  public:
+  void bytes_perforate(void *p, size_t n, size_t itemsize, int skip_param);
+
   //Write data to the given buffer
   toMem(void* Nbuf, const unsigned int purpose = 0)
       : mem(IS_PACKING, (myByte*)Nbuf, purpose)
@@ -482,6 +488,93 @@ class fromMem : public mem {
 
  public:
   //Read data from the given buffer
+  // now we need to unpack a perforated buffer.
+  // Policy: for perforated n_i we take 1/2(n_{i-1}+n_{i+1})
+  // n is the original size in number of items of size sizeof(T)
+  template<typename T>
+  void bytes_perforate(void *p, size_t n, size_t itemsize, int skip_param, T type)
+  {
+    #if COPY_PERFORATE_BLOCKS
+    size_t current_copy = itemsize*skip_param;
+    size_t copied = 0;
+    // p but we can do arithmetic on it
+    char *p_a = (char*) p;
+    T new_T;
+
+    // while we have at least one entire block to copy
+    while((n*itemsize)-copied >= current_copy)
+      {
+        // We can always copy an entire block
+        memcpy((void *)p_a,(const void*)buf,current_copy);
+        p_a += current_copy;
+        // we need to create value of type 'T'
+        // example: original was 1 2 3 4
+        // New is 1 2 4, we are now pointing at 2.
+        // We want (2+4)/2.. need to look at buf and buf+1
+        T *rhs = (T*) buf;
+        T *lhs = (T*) buf+sizeof(T);
+
+        new_T = (*lhs+*rhs)/2;
+        memcpy((void *)p_a,&new_T,sizeof(T));
+
+        buf += current_copy;
+
+        copied += current_copy;
+      }
+
+    // there is at most skip_param-1 items left to copy
+    if (n*itemsize - copied > 0)
+      {
+        // NOTE: we are always working in terms of bytes
+        current_copy = n*itemsize-copied;
+        memcpy((void *)p_a,(const void*)buf,current_copy);
+
+      }
+#else // COPY_PERFORATE_BYTES
+  char *p_a = (char *) p;
+  T new_T;
+
+  for(size_t i = 0; i < n/skip_param; i++)
+    {
+      // copy one item into the buffer
+      memcpy(p_a,(void*) buf,itemsize);
+      p_a += itemsize;
+      // increment buf here, we copied an actual item
+      buf += itemsize;
+
+      // Initialize the first 'gap' item the item we just wrote
+      memcpy(p_a, p_a, itemsize);
+      p_a += itemsize;
+
+      // create the next skip_param items, placing them into the destination buffer
+      for(size_t j = 0; j < skip_param-1; j++)
+        {
+          T *rhs = (T*) p_a-sizeof(T);
+          // because we initialized the first gap, this always exists,
+          // in the worst case, it's p_a itself.
+          T *lhs = (T*) p_a-(2*sizeof(T));
+          new_T = (*rhs+*lhs)/2;
+          memcpy((void*) p_a, &new_T, sizeof(T));
+          p_a += itemsize;
+        }
+    }
+
+  // these items would have been dropped altogether
+  for(size_t i = 0; i < n%skip_param; i++)
+    {
+          T *rhs = (T*) p_a-sizeof(T);
+          // because we initialized the first gap, this always exists,
+          // in the worst case, it's p_a itself.
+          T *lhs = (T*) p_a-(2*sizeof(T));
+          new_T = (*rhs+*lhs)/2;
+          memcpy((void*) p_a, &new_T, sizeof(T));
+          p_a += itemsize;
+    }
+
+
+#endif // COPY_PERFORATE_BLOCKS
+  }
+
   fromMem(const void* Nbuf, const unsigned int purpose = 0)
       : mem(IS_UNPACKING, (myByte*)Nbuf, purpose)
   {

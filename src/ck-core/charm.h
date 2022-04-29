@@ -128,7 +128,7 @@ extern void registerMainchareCtorExtCallback(void (*cb)(int, void*, int, int, ch
 extern void registerReadOnlyRecvExtCallback(void (*cb)(int, char*));
 extern void registerChareMsgRecvExtCallback(void (*cb)(int, void*, int, int, char*, int));
 extern void registerGroupMsgRecvExtCallback(void (*cb)(int, int, int, char *, int));
-extern void registerArrayMsgRecvExtCallback(void (*cb)(int, int, int *, int, int, char *, int));
+extern void registerArrayMsgRecvExtCallback(void (*cb)(int, int, int *, int, int, char *, int, int));
 extern void registerArrayBcastRecvExtCallback(void (*cb)(int, int, int, int, int*, int, int, char *, int));
 extern void registerArrayElemLeaveExtCallback(int (*cb)(int, int, int *, char**, int));
 extern void registerArrayElemJoinExtCallback(void (*cb)(int, int, int *, int, char*, int));
@@ -424,7 +424,7 @@ extern void CkForwardMulticastMsg(int gid, int num_children, const int *children
 /// of dimensions of the index. If ndims <= 0, msg will be broadcasted to all array elements
 extern void CkArrayExtSend(int aid, int *idx, int ndims, int epIdx, char *msg, int msgSize);
 /// Send msg to array copying data into CkMessage from multiple input buffers
-extern void CkArrayExtSend_multi(int aid, int *idx, int ndims, int epIdx, int num_bufs, char **bufs, int *buf_sizes);
+  extern void CkArrayExtSend_multi(int aid, int *idx, int ndims, int epIdx, int num_bufs, char **bufs, int *buf_sizes, int skip_amt);
 #endif
 
 /*@}*/

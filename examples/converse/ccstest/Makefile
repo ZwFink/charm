@@ -13,7 +13,7 @@ server.o: server.C
 	$(CHARMC) -c server.C -language converse++
 
 client.o: client.C
-	g++ -c client.C -I$(CHARMDIR)/include
+	g++ -c client.C -I$(CHARMDIR)/include -I$(CHARMDIR)/src/conv-ccs -L$(CHARMDIR)/lib
 
 clean:
 	rm -f client server *.o conv-host charmrun

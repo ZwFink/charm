@@ -18,6 +18,7 @@ virtual functions are defined here.
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <cassert>
 
 #include "converse.h"
 #include "pup.h"
@@ -155,6 +156,40 @@ void PUP::toMem::bytes(void *p,size_t n,size_t itemSize,dataType t)
 	n*=itemSize;
 	memcpy((void *)buf,p,n); 
 	buf+=n;
+}
+
+// copy in blocks of ~block_size~, droping the item between blocks
+void PUP::toMem::bytes_perforate(void *p, size_t n, size_t itemsize, int skip_param)
+{
+#if COPY_PERFORATE_BYTES
+  size_t current_copy = itemsize*skip_param;
+  size_t copied = 0;
+  size_t true_copy = 0;
+  // p but we can do arithmetic on it
+  char *p_a = (char*) p;
+
+  while(copied < n*itemsize)
+    {
+      // if we can completely copy a new block, do so
+      // otherwise, copy the remaining data
+      true_copy = current_copy + copied < n*itemsize ? current_copy : n*itemsize-copied;
+      memcpy((void *)buf,(void*)p_a,true_copy);
+      p_a += true_copy;
+      buf+=true_copy;
+
+      // drop an item
+      p_a += itemsize;
+      copied += true_copy + itemsize;
+    }
+#else // COPY_PERFORATE_BYTES
+  char *p_a = (char *) p;
+  for(size_t i = 0; i < n; i += skip_param)
+    {
+      memcpy((void *)buf,p_a,itemsize);
+      buf += itemsize;
+      p_a += (itemsize*skip_param);
+    }
+#endif // COPY_PERFORATE_BYTES
 }
 void PUP::fromMem::bytes(void *p,size_t n,size_t itemSize,dataType t)
 {

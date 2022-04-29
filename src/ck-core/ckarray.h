@@ -490,7 +490,7 @@ typedef ArrayElementT<CkIndexMax> ArrayElementMax;
 
 #if CMK_CHARM4PY
 
-extern void (*ArrayMsgRecvExtCallback)(int, int, int*, int, int, char*, int);
+extern void (*ArrayMsgRecvExtCallback)(int, int, int*, int, int, char*, int, int);
 extern int (*ArrayElemLeaveExt)(int, int, int*, char**, int);
 extern void (*ArrayElemJoinExt)(int, int, int*, int, char*, int);
 extern void (*ArrayResumeFromSyncExtCallback)(int, int, int*);
@@ -520,11 +520,13 @@ public:
     implP | msgSize;
     int ep;
     implP | ep;
+    int skip_amt;
+    implP | skip_amt;
     int dcopy_start;
     implP | dcopy_start;
     ArrayMsgRecvExtCallback(((CkGroupID)e->thisArrayID).idx,
                             int(e->thisIndexMax.getDimension()), e->thisIndexMax.data(),
-                            ep, msgSize, impl_buf + (3 * sizeof(int)), dcopy_start);
+                            ep, msgSize, impl_buf + (4 * sizeof(int)), dcopy_start, skip_amt);
   }
 
   static void __AtSyncEntryMethod(void* impl_msg, void* impl_obj_void)

@@ -2284,8 +2284,8 @@ void registerGroupMsgRecvExtCallback(void (*cb)(int, int, int, char *, int)) {
   GroupMsgRecvExtCallback = cb;
 }
 
-void (*ArrayMsgRecvExtCallback)(int, int, int *, int, int, char *, int) = NULL;
-void registerArrayMsgRecvExtCallback(void (*cb)(int, int, int *, int, int, char *, int)) {
+void (*ArrayMsgRecvExtCallback)(int, int, int *, int, int, char *, int, int) = NULL;
+void registerArrayMsgRecvExtCallback(void (*cb)(int, int, int *, int, int, char *, int, int)) {
   ArrayMsgRecvExtCallback = cb;
 }
 
@@ -2600,11 +2600,12 @@ void CkForwardMulticastMsg(int _gid, int num_children, const int *children) {
 }
 
 void CkArrayExtSend(int aid, int *idx, int ndims, int epIdx, char *msg, int msgSize) {
-  int marshall_msg_size = (sizeof(char)*msgSize + 3*sizeof(int));
+  int marshall_msg_size = (sizeof(char)*msgSize + 4*sizeof(int));
   CkMarshallMsg *impl_msg = CkAllocateMarshallMsg(marshall_msg_size, NULL);
   PUP::toMem implP((void *)impl_msg->msgBuf);
   implP|msgSize;
   implP|epIdx;
+  int p=-1; implP|p;
   int d=0; implP|d;
   implP(msg, msgSize);
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
@@ -2621,17 +2622,57 @@ void CkArrayExtSend(int aid, int *idx, int ndims, int epIdx, char *msg, int msgS
   }
 }
 
-void CkArrayExtSend_multi(int aid, int *idx, int ndims, int epIdx, int num_bufs, char **bufs, int *buf_sizes) {
+int calc_size(int n, int s)
+{
+  return sizeof(double) * ceil((n/sizeof(double))*(1-(1/(double)(s+1))));
+}
+
+void CkArrayExtSend_multi(int aid, int *idx, int ndims, int epIdx, int num_bufs, char **bufs, int *buf_sizes, int skip_amt) {
   CkAssert(num_bufs >= 1);
   int totalSize = 0;
-  for (int i=0; i < num_bufs; i++) totalSize += buf_sizes[i];
-  int marshall_msg_size = (sizeof(char)*totalSize + 3*sizeof(int));
+
+  if(skip_amt == -1)
+    {
+      for (int i=0; i < num_bufs; i++) totalSize += buf_sizes[i];
+    }
+  else
+    {
+      // todo: copy perforate bytes interacts with this how?
+      // skip_amt is block size, skip_amt +1 is the amount affected by a single block
+      totalSize += buf_sizes[0];
+      for (int i=1; i < num_bufs; i++)
+        {
+          // 1-(1/(skip_amt+1)) is the proportion that remains
+          // take ceil because we don't take fractional values, any additional must be
+          // taken
+          // claim: this is equivalent to if we had done floor(x) and then added mod(x)
+          // pf: ??
+          // Convert to double because buf_sizes[i] is size in bytes
+          int new_size = sizeof(double) * ceil((buf_sizes[i]/sizeof(double))*(1-(1/(double)(skip_amt+1))));
+          totalSize += new_size;
+        }
+    }
+  int marshall_msg_size = (sizeof(char)*totalSize + 4*sizeof(int));
   CkMarshallMsg *impl_msg = CkAllocateMarshallMsg(marshall_msg_size, NULL);
   PUP::toMem implP((void *)impl_msg->msgBuf);
   implP | totalSize;
   implP | epIdx;
+  implP | skip_amt;
   implP | buf_sizes[0];
-  for (int i=0; i < num_bufs; i++) implP(bufs[i], buf_sizes[i]);
+  if(skip_amt == -1)
+    {
+      for (int i=0; i < num_bufs; i++) implP(bufs[i], buf_sizes[i]);
+    }
+  else
+    {
+      // the first buffer should be copied directly: it is message metadata
+      implP(bufs[0], buf_sizes[0]);
+      for(int i = 1; i < num_bufs; i++)
+        {
+          // implP(bufs[i], calc_size(buf_sizes[i], skip_amt));
+          implP.bytes_perforate(bufs[i], buf_sizes[i]/8, sizeof(double), skip_amt);
+        }
+    }
   UsrToEnv(impl_msg)->setMsgtype(ForArrayEltMsg);
   CkArrayMessage *impl_amsg=(CkArrayMessage *)impl_msg;
   impl_amsg->array_setIfNotThere(CkArray_IfNotThere_buffer);

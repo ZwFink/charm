@@ -509,7 +509,7 @@ ArrayElemExt::ArrayElemExt(void* impl_msg)
 
   ArrayMsgRecvExtCallback(((CkGroupID)thisArrayID).idx, int(thisIndexMax.getDimension()),
                           thisIndexMax.data(), ctorEpIdx, msgSize,
-                          impl_buf + (2 * sizeof(int)) + sizeof(char), dcopy_start);
+                          impl_buf + (2 * sizeof(int)) + sizeof(char), dcopy_start, -1);
 }
 
 #endif
@@ -1437,10 +1437,12 @@ void CkArrayBroadcaster::deliver(CkArrayMessage* bcast,
   implP | msgSize;
   int ep;
   implP | ep;
+  int skip_amt = -1;
+  implP | skip_amt;
   int dcopy_start;
   implP | dcopy_start;
   ArrayBcastRecvExtCallback(arrayId, numDim, numInts, numValidElements,
-                            validIndexes.data(), ep, msgSize, msg_buf + (3 * sizeof(int)),
+                            validIndexes.data(), ep, msgSize, msg_buf + (4 * sizeof(int)),
                             dcopy_start);
   if (doFree)
     delete bcast;
